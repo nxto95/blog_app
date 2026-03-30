@@ -30,20 +30,6 @@ export class UsersController {
     };
   }
 
-  @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
-    const newUser = await this.usersService.create(createUserDto);
-    return {
-      message: 'user created',
-      data: {
-        id: newUser._id.toString(),
-        email: newUser.email,
-        username: newUser.username,
-        role: newUser.role,
-      },
-    };
-  }
-
   @Get(':id')
   async findById(@Param('id') id: string) {
     const user = await this.usersService.findById(id);

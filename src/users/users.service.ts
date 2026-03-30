@@ -97,4 +97,24 @@ export class UsersService {
       throw error;
     }
   }
+
+  async findUserByEmailForAuth(email: string) {
+    return await this.userModel
+      .findOne({ email })
+      .select('_id email password role');
+  }
+
+  async findUserByIdForAuth(id: string) {
+    return await this.userModel.findById(id).select('+refreshToken role');
+  }
+
+  async updateRefreshToken(id: string, refreshToken: string | null) {
+    const update = refreshToken
+      ? { refreshToken: await argon.hash(refreshToken) }
+      : { refreshToken: null };
+
+    return this.userModel.findByIdAndUpdate(id, update, {
+      new: true,
+    });
+  }
 }
