@@ -1,8 +1,9 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import type { Request } from 'express';
-import { CreateUserDto } from 'src/ dtos/create-user.dto';
+import { CreateUserDto } from '../ dtos/create-user.dto';
 import { JwtAuthGuard, LocalAuthGuard, RefreshAuthGuard } from './guards';
+import { CurrentUser } from './decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -36,12 +37,6 @@ export class AuthController {
     };
   }
 
-  @Get('profile')
-  @UseGuards(JwtAuthGuard)
-  async profile(@Req() req: Request) {
-    return req.user;
-  }
-
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   async logout(@Req() req: Request) {
@@ -65,5 +60,11 @@ export class AuthController {
         refreshToken: refresh,
       },
     };
+  }
+
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  async profile(@CurrentUser() user: any) {
+    return user;
   }
 }

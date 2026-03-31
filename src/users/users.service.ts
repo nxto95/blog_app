@@ -7,9 +7,9 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './users.schema';
 import { Model } from 'mongoose';
-import { CreateUserDto } from 'src/ dtos/create-user.dto';
+import { CreateUserDto } from '../ dtos/create-user.dto';
 import * as argon from 'argon2';
-import { UpdateUserDto } from 'src/ dtos/update-user.dto';
+import { UpdateUserDto } from '../ dtos/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -17,12 +17,12 @@ export class UsersService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
+  // [01] create user
   async create(createUserDto: CreateUserDto) {
     try {
-      const hashedPassword = await argon.hash(createUserDto.password);
       const userObj = new this.userModel({
         email: createUserDto.email,
-        password: hashedPassword,
+        password: await this.hash(createUserDto.password),
         username: createUserDto.username,
       });
       return await userObj.save();
@@ -42,36 +42,7 @@ export class UsersService {
       throw error;
     }
   }
-
-  async getAll() {
-    return await this.userModel.find();
-  }
-
-  async findById(id: string) {
-    try {
-      const user = await this.userModel.findById(id);
-      if (!user)
-        throw new NotFoundException(`user with this [${id}] id not found`);
-      return user;
-    } catch (error: any) {
-      if ((error.name === 'CastError', error.kind === 'ObjectId'))
-        throw new BadRequestException('invalid id');
-      throw error;
-    }
-  }
-
-  async delete(id: string) {
-    try {
-      const user = await this.userModel.findByIdAndDelete(id);
-
-      return user;
-    } catch (error) {
-      if ((error.name === 'CastError', error.kind === 'ObjectId'))
-        throw new BadRequestException('invalid id');
-      throw error;
-    }
-  }
-
+  // [02] update user
   async update(id: string, updateUserDto: UpdateUserDto) {
     try {
       const user = await this.userModel.findByIdAndUpdate(id, updateUserDto, {
@@ -97,24 +68,69 @@ export class UsersService {
       throw error;
     }
   }
+  // [03] delete user
+  async delete(id: string) {
+    try {
+      const user = await this.userModel.findByIdAndDelete(id);
 
+      return user;
+    } catch (error) {
+      if ((error.name === 'CastError', error.kind === 'ObjectId'))
+        throw new BadRequestException('invalid id');
+      throw error;
+    }
+  }
+  // [04] get one user - email => for auth
   async findUserByEmailForAuth(email: string) {
     return await this.userModel
       .findOne({ email })
       .select('_id email password role');
   }
-
-  async findUserByIdForAuth(id: string) {
-    return await this.userModel.findById(id).select('+refreshToken role');
+  // [05] get one user - id
+  async findById(id: string) {
+    try {
+      const user = await this.userModel.findById(id);
+      if (!user)
+        throw new NotFoundException(`user with this [${id}] id not found`);
+      return user;
+    } catch (error: any) {
+      if ((error.name === 'CastError', error.kind === 'ObjectId'))
+        throw new BadRequestException('invalid id');
+      throw error;
+    }
   }
-
+  // [06] get one user - id => for auth
+  async findUserByIdForAuth(id: string) {
+    try {
+      return await this.userModel.findById(id).select('+refreshToken role');
+    } catch (error) {
+      if ((error.name === 'CastError', error.kind === 'ObjectId')) {
+        throw new BadRequestException('invalid id');
+      }
+    }
+  }
+  // [07] get all users - TODO => pagination
+  async getAll() {
+    return await this.userModel.find();
+  }
+  // [08] update refresh tokens
   async updateRefreshToken(id: string, refreshToken: string | null) {
-    const update = refreshToken
-      ? { refreshToken: await argon.hash(refreshToken) }
-      : { refreshToken: null };
+    try {
+      const update = refreshToken
+        ? { refreshToken: await this.hash(refreshToken) }
+        : { refreshToken: null };
 
-    return this.userModel.findByIdAndUpdate(id, update, {
-      new: true,
-    });
+      return this.userModel.findByIdAndUpdate(id, update, {
+        new: true,
+      });
+    } catch (error) {
+      if ((error.name === 'CastError', error.kind === 'ObjectId')) {
+        throw new BadRequestException('invalid id');
+      }
+    }
+  }
+  // [09] hash - utility function
+  private async hash(plainText: string) {
+    return await argon.hash(plainText);
   }
 }

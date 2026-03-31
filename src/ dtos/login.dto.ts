@@ -1,10 +1,6 @@
-import { Transform } from 'class-transformer';
 import { IsEmail, IsString, MinLength } from 'class-validator';
+import { Normalize } from './create-user.dto';
 
-export const Normalize = () =>
-  Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  );
 export class CreateUserDto {
   @Normalize()
   @IsEmail()

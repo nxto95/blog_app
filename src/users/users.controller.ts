@@ -1,17 +1,6 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  NotFoundException,
-  Param,
-  Post,
-  Put,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Put } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from 'src/ dtos/create-user.dto';
-import { NotFoundError } from 'rxjs';
-import { UpdateUserDto } from 'src/ dtos/update-user.dto';
+import { UpdateUserDto } from '../ dtos/update-user.dto';
 
 @Controller('users')
 export class UsersController {
